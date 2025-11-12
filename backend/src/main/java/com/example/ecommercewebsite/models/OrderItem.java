@@ -24,7 +24,7 @@ public class OrderItem {
     private Integer quantity;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id") // child has foreign key
+    @JoinColumn(name = "order_id")
     @JsonBackReference
     private Order order;
 }

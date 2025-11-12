@@ -14,7 +14,7 @@ public class PromocodeController {
     @Autowired
     private PromoCodeServices service;
 
-    // ✅ Return ResponseEntity<PromoCode>
+
     @GetMapping("/validate/{code}")
     public ResponseEntity<PromoCode> validate(@PathVariable String code) {
         PromoCode promo = service.findByCode(code);
@@ -26,7 +26,7 @@ public class PromocodeController {
         return ResponseEntity.ok(promo);
     }
 
-    // ✅ Create new promo code (for testing)
+
     @PostMapping
     public ResponseEntity<PromoCode> create(@RequestBody PromoCode promo) {
         PromoCode created = service.create(promo);

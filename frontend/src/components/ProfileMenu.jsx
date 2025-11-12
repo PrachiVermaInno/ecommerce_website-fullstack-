@@ -1,4 +1,4 @@
-// src/components/ProfileMenu.jsx
+
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 
@@ -6,7 +6,7 @@ const ProfileMenu = () => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // close dropdown when clicked outside
+  
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -83,7 +83,7 @@ const ProfileMenu = () => {
   );
 };
 
-// shared link style
+
 const linkStyle = {
   display: "block",
   padding: "10px 15px",

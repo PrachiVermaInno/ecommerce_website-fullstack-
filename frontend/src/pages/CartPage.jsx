@@ -29,13 +29,13 @@ const CartPage = () => {
     zipcode: "",
   });
 
-  // ✅ Subtotal before discount
+
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
-  // ✅ Recalculate discount whenever promo/subtotal changes
+  
   useEffect(() => {
     if (appliedPromo && appliedPromo.discount) {
       setDiscount(subtotal * appliedPromo.discount);
@@ -44,7 +44,7 @@ const CartPage = () => {
     }
   }, [subtotal, appliedPromo]);
 
-  // ✅ Apply Promo Code
+  
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
       alert("Please enter a promo code!");
@@ -67,13 +67,13 @@ const CartPage = () => {
     }
   };
 
-  // ✅ Quantity Increment/Decrement
+  
   const handleQtyChange = (item, newQty) => {
     if (newQty < 1) return;
     dispatch(setQty({ id: item.id, quantity: newQty }));
   };
 
-  // ✅ Proceed to Address Form
+  
   const handlePlaceOrder = () => {
     if (cartItems.length === 0) {
       alert("Your cart is empty!");
@@ -82,7 +82,7 @@ const CartPage = () => {
     setShowAddressForm(true);
   };
 
-  // ✅ Submit Order to Backend
+ 
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
     setPlacingOrder(true);
@@ -123,7 +123,7 @@ const CartPage = () => {
         <p>Your cart is empty.</p>
       ) : (
         <>
-          {/* Cart Items */}
+         
           {cartItems.map((item) => (
             <div
               key={item.id}
@@ -182,7 +182,7 @@ const CartPage = () => {
             </div>
           ))}
 
-          {/* Promo Section */}
+          
           <div style={{ marginTop: "2rem" }}>
             <h3>Promo Code</h3>
             <input
@@ -201,7 +201,6 @@ const CartPage = () => {
             )}
           </div>
 
-          {/* Summary */}
           <div style={{ marginTop: "2rem" }}>
             <h3>Summary</h3>
             <p>Subtotal: ₹{subtotal.toFixed(2)}</p>
@@ -239,7 +238,7 @@ const CartPage = () => {
         </>
       )}
 
-      {/* Address Form Modal */}
+     
       {showAddressForm && (
         <div
           style={{

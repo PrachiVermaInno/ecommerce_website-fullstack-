@@ -1,10 +1,10 @@
--- Insert sample products directly from FakeStoreAPI
+
 INSERT INTO product (title, price, description, category, image, rating_rate, rating_count)
 VALUES
 ('Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops', 109.95,
 'Your perfect pack for everyday use and walks in the forest. Stash your laptop (up to 15 inches) in the padded sleeve.',
 'men''s clothing',
-'https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.png',
+'https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_t.png'
 3.9, 120),
 
 ('Mens Casual Premium Slim Fit T-Shirts ', 22.3,
@@ -60,9 +60,6 @@ VALUES
 'electronics',
 'https://fakestoreapi.com/img/61U7T1koQqL._AC_SX679_.jpg',
 2.9, 470);
-
--- Promo codes
--- backend/src/main/resources/data.sql
 
 INSERT INTO promo_code (code, discount, valid_until)
 VALUES

@@ -1,18 +1,11 @@
-// src/pages/CheckoutPage.jsx
+
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { clearCart, addOrder as addOrderAction } from "../redux/reducers";
 import { useNavigate } from "react-router-dom";
 
-/**
- * Checkout page:
- * - prefill address from localStorage if available
- * - allow saving address to localStorage
- * - compute subtotal, discount and total
- * - POST /api/orders to backend and show returned order details
- * - fallback to local-order behaviour if backend fails
- */
+
 
 const toNumber = (v) => {
   const n = Number(v);
@@ -23,12 +16,12 @@ export default function CheckoutPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // cart + promo from redux
+  
   const cart = useSelector((s) => s.cart);
   const items = cart.items ?? [];
   const promo = cart.promo ?? null;
 
-  // read saved address from localStorage
+  
   const savedAddressJson = (typeof window !== "undefined" && localStorage.getItem("userAddress")) || null;
   let savedAddress = null;
   try {
@@ -49,26 +42,26 @@ export default function CheckoutPage() {
 
   const [saveAddress, setSaveAddress] = useState(Boolean(savedAddress));
   const [placing, setPlacing] = useState(false);
-  const [orderResponse, setOrderResponse] = useState(null); // will hold created order returned by backend
+  const [orderResponse, setOrderResponse] = useState(null); 
 
-  // subtotal, discount, total
+  
   const subtotal = items.reduce((s, it) => s + toNumber(it.price) * toNumber(it.quantity ?? 1), 0);
 
-  // apply promo: support percent (0.1) or flat (e.g., 50)
+  
   const discount = (() => {
     if (!promo) return 0;
     const val = toNumber(promo.value ?? promo.discount ?? 0);
-    // Use promo.type to detect behaviour; support 'percent' or 'flat' or numeric fraction
+    
     const type = promo.type ?? (val > 1 ? "flat" : "percent");
     if (type === "flat") return val;
-    // percent expected as 0.1 = 10%
+    
     return subtotal * val;
   })();
 
   const total = Math.max(0, subtotal - discount);
 
   useEffect(() => {
-    // keep totals in sync if promo or cart changes
+    
   }, [subtotal, promo]);
 
   const handleChange = (e) => {
@@ -121,12 +114,12 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Save address if user opted in
+    
     if (saveAddress) {
       try {
         localStorage.setItem("userAddress", JSON.stringify(address));
       } catch {
-        // ignore storage errors
+        
       }
     } else {
       localStorage.removeItem("userAddress");
@@ -136,32 +129,32 @@ export default function CheckoutPage() {
 
     setPlacing(true);
     try {
-      // Change base URL to your backend if not localhost:8080
+      
       const res = await axios.post("http://localhost:8080/api/orders", payload, {
         headers: { "Content-Type": "application/json" },
         timeout: 10000,
       });
 
-      // Expect backend to return saved order as res.data
+      
       const created = res?.data ?? null;
 
       if (created) {
         setOrderResponse(created);
 
-        // update app state: add order (optional) and clear cart
+        
         try {
           dispatch(addOrderAction(created));
         } catch (e) {
-          // ignore if addOrder action shape differs; still clear cart below
+          
         }
         dispatch(clearCart());
-        // notify header to refresh badge
+        
         window.dispatchEvent(new Event("cartUpdated"));
         setPlacing(false);
         return;
       }
 
-      // If backend didn't return order object, fallback to local mock order
+      
       const fallback = {
         id: Date.now(),
         items: payload.items,
@@ -177,7 +170,7 @@ export default function CheckoutPage() {
       window.dispatchEvent(new Event("cartUpdated"));
     } catch (error) {
       console.error("Order placement error:", error);
-      // If backend not available, fallback to client-side order (so flow still works)
+      
       const fallback = {
         id: Date.now(),
         items: payload.items,
@@ -187,7 +180,7 @@ export default function CheckoutPage() {
         status: "PENDING",
         placedAt: new Date().toISOString(),
       };
-      // show friendly message but proceed
+      
       alert("Backend not available — order saved locally for demo.");
       setOrderResponse(fallback);
       dispatch(addOrderAction(fallback));
@@ -198,7 +191,7 @@ export default function CheckoutPage() {
     }
   };
 
-  // If orderResponse exists show confirmation view
+  
   if (orderResponse) {
     const ord = orderResponse;
     return (
@@ -253,13 +246,13 @@ export default function CheckoutPage() {
     );
   }
 
-  // default: show the address form & summary
+ 
   return (
     <div style={{ padding: 20, maxWidth: 800 }}>
       <h2>Checkout</h2>
 
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-        {/* Address form */}
+        
         <div style={{ flex: 1 }}>
           <label>
             Full name *
@@ -306,7 +299,7 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Order summary */}
+        
         <div style={{ width: 320, border: "1px solid #ddd", padding: 12, borderRadius: 8 }}>
           <h3>Order Summary</h3>
           <p>Subtotal: <b>₹{subtotal.toFixed(2)}</b></p>

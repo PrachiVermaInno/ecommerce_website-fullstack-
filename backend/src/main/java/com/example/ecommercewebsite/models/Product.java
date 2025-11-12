@@ -21,7 +21,7 @@ public class Product {
     private Double price;
     private String image;
 
-    // ✅ Flattened columns (simple numeric types)
+
     private Double ratingRate;
     private Integer ratingCount;
 }

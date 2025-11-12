@@ -28,7 +28,7 @@ public class ProductServices {
 
     @Transactional
     public Product save(Product p) {
-        // ensure creation rather than accidental merge with id set
+
         p.setId(null);
         return repo.save(p);
     }

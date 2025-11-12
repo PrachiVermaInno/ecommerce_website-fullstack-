@@ -1,4 +1,4 @@
-package com.example.ecommercewebsite.controller;
+package com.example.ecommercewebsite.controllers;
 
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;

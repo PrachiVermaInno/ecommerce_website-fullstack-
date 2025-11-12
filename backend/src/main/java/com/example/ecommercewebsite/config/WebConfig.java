@@ -1,4 +1,4 @@
-// src/main/java/com/example/ecommercewebsite/config/WebConfig.java
+
 package com.example.ecommercewebsite.config;
 
 import org.springframework.context.annotation.Bean;

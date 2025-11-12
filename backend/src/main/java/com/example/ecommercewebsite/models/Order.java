@@ -10,7 +10,7 @@ import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Entity(name = "orders") // table 'orders'
+@Entity(name = "orders")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,7 +21,7 @@ public class Order {
     private Long id;
 
     private Double total;
-    private String status; // Pending, Delivered, Cancelled
+    private String status;
     private LocalDateTime placedAt;
     private LocalDateTime deliveredAt;
     private Integer qty;
@@ -35,5 +35,5 @@ public class Order {
     private List<OrderItem> items;
 
     @ManyToOne
-    private PromoCode promo; // nullable
+    private PromoCode promo;
 }

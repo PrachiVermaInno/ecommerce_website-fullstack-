@@ -19,6 +19,8 @@ const ProductDetails = () => {
     const fetchProduct = async () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/products/${id}`);
+    
+        console.log("Fetched product:",res.data);
         setProduct(res.data);
         setLoading(false);
       } catch (err) {
@@ -49,19 +51,20 @@ const ProductDetails = () => {
       <div className="grid md:grid-cols-2 gap-10 items-center">
         {/* Image Section */}
         <div className="flex justify-center">
-          <img
+       <img
             src={
-              product.image ||
-              "https://via.placeholder.com/350x350?text=No+Image+Available"
+              product?.image && product.image.startsWith("http")
+                ? product.image
+                : "https://via.placeholder.com/350x350?text=No+Image"
             }
-            alt={product.title}
+            alt={product?.title || "Product"}
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src =
-                "https://via.placeholder.com/350x350?text=Image+Not+Found";
+              e.target.src = "https://placehold.co/350x350?text=No+Image";
+
             }}
-            className="w-[350px] h-[350px] object-contain rounded-xl border border-gray-200"
-          />
+            className="w-[350px] h-[350px] object-contain rounded-xl border border-gray-300 shadow-sm"
+          />  
         </div>
 
         {/* Product Info */}

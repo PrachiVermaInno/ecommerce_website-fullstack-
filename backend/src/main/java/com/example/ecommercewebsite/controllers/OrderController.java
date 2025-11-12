@@ -32,7 +32,6 @@ public class OrderController {
             order.setPlacedAt(LocalDateTime.now());
         }
 
-        // ✅ Handle promo code safely (fetch from DB if provided)
         if (order.getPromo() != null && order.getPromo().getCode() != null) {
             PromoCode promo = promoservice.findByCode(order.getPromo().getCode());
             if (promo != null) {
@@ -54,7 +53,7 @@ public class OrderController {
                         .mapToDouble(i -> i.getPrice() * i.getQuantity())
                         .sum();
 
-                // Apply promo discount
+
                 /*if (order.getPromo() != null && order.getPromo().getDiscount() != null) {
                     total -= total * order.getPromo().getDiscount();
                 }*/

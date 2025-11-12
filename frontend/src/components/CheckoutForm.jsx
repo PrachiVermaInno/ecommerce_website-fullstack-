@@ -1,4 +1,4 @@
-// src/components/CheckoutForm.jsx
+
 import React from "react";
 
 export default function CheckoutForm({ address, setAddress, onSubmit }) {

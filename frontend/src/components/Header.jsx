@@ -1,4 +1,4 @@
-// src/components/Header.jsx
+
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -9,11 +9,10 @@ export default function Header() {
   const dropdownRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // read cart items from redux and compute total quantity
   const items = useSelector((state) => state?.cart?.items ?? []);
   const count = items.reduce((s, it) => s + (Number(it.quantity) || 0), 0);
 
-  // close dropdown on outside click
+
   useEffect(() => {
     function onDocClick(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -24,7 +23,7 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  // keep badge in sync if some other code triggers a global event (optional)
+  
   useEffect(() => {
     function onCartUpdated() {
     }
@@ -33,10 +32,10 @@ export default function Header() {
   }, []);
 
   const handleLogout = () => {
-    // placeholder - replace with real logout logic if needed
+    
     alert("Logged out (placeholder)");
     setDropdownOpen(false);
-    // navigate("/") // optionally redirect
+   
   };
 
   return (
@@ -56,7 +55,7 @@ export default function Header() {
         zIndex: 1000,
       }}
     >
-      {/* left: logo/title */}
+      
       <div
         style={{ display: "flex", alignItems: "center", gap: 5, cursor: "pointer" }}
         onClick={() => navigate("/")}
@@ -73,14 +72,14 @@ export default function Header() {
       <nav style={{ display: "flex", alignItems: "center", gap: 18 }}>
       
 
-        {/* Notifications (bell svg) */}
+        
         <button
           aria-label="Notifications"
           title="Notifications"
           style={iconButtonStyle}
           onClick={() => alert("No notifications (placeholder)")}
         >
-          {/* simple bell SVG */}
+          
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M15 17H9" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
@@ -88,7 +87,7 @@ export default function Header() {
           </svg>
         </button>
 
-        {/* Cart */}
+        
         <div style={{ position: "relative" }}>
           <button
             aria-label="Open cart"
@@ -96,7 +95,7 @@ export default function Header() {
             onClick={() => navigate("/cart")}
             style={iconButtonStyle}
           >
-            {/* cart svg */}
+            
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path d="M6 6h15l-1.5 9h-12L6 6z" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M6 6L4 2" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
@@ -125,7 +124,7 @@ export default function Header() {
           )}
         </div>
 
-        {/* Profile dropdown */}
+        
         <div ref={dropdownRef} style={{ position: "relative" }}>
           <button
             onClick={() => setDropdownOpen((s) => !s)}
@@ -177,7 +176,7 @@ export default function Header() {
   );
 }
 
-// small reusable styles
+
 const linkStyle = {
   color: "#fff",
   textDecoration: "none",
