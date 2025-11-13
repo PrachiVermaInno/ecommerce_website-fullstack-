@@ -1,337 +1,284 @@
-
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import axios from "axios";
-import { clearCart, addOrder as addOrderAction } from "../redux/reducers";
+import { clearCart } from "../redux/reducers";
 import { useNavigate } from "react-router-dom";
 
-
-
-const toNumber = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
-
-export default function CheckoutPage() {
+const CheckoutPage = () => {
+  const cartItems = useSelector((state) => state.cart?.items || []);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  
-  const cart = useSelector((s) => s.cart);
-  const items = cart.items ?? [];
-  const promo = cart.promo ?? null;
-
-  
-  const savedAddressJson = (typeof window !== "undefined" && localStorage.getItem("userAddress")) || null;
-  let savedAddress = null;
-  try {
-    savedAddress = savedAddressJson ? JSON.parse(savedAddressJson) : null;
-  } catch {
-    savedAddress = null;
-  }
-
   const [address, setAddress] = useState({
-    name: savedAddress?.name ?? "",
-    street: savedAddress?.street ?? "",
-    city: savedAddress?.city ?? "",
-    state: savedAddress?.state ?? "",
-    zipcode: savedAddress?.zipcode ?? "",
-    phone: savedAddress?.phone ?? "",
-    country: savedAddress?.country ?? "",
+    name: "",
+    street: "",
+    city: "",
+    state: "",
+    zip: "",
+    country: "",
   });
 
-  const [saveAddress, setSaveAddress] = useState(Boolean(savedAddress));
-  const [placing, setPlacing] = useState(false);
-  const [orderResponse, setOrderResponse] = useState(null); 
+  const [placed, setPlaced] = useState(false);
+  const [error, setError] = useState("");
 
-  
-  const subtotal = items.reduce((s, it) => s + toNumber(it.price) * toNumber(it.quantity ?? 1), 0);
-
-  
-  const discount = (() => {
-    if (!promo) return 0;
-    const val = toNumber(promo.value ?? promo.discount ?? 0);
-    
-    const type = promo.type ?? (val > 1 ? "flat" : "percent");
-    if (type === "flat") return val;
-    
-    return subtotal * val;
-  })();
-
-  const total = Math.max(0, subtotal - discount);
-
-  useEffect(() => {
-    
-  }, [subtotal, promo]);
+  const subtotal = cartItems.reduce(
+    (acc, item) => acc + (item.price || 0) * (item.quantity || 1),
+    0
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setAddress((p) => ({ ...p, [name]: value }));
+    setAddress((prev) => ({ ...prev, [name]: value }));
   };
-
-  const validateAddress = () => {
-    if (!address.name?.trim()) return "Name is required";
-    if (!address.city?.trim()) return "City is required";
-    if (!address.street?.trim()) return "Street is required";
-    if (!address.zipcode?.trim()) return "Zipcode is required";
-    return null;
-  };
-
-  const buildOrderPayload = () => {
-    const itemsPayload = items.map((it) => ({
-      productId: it.id,
-      productName: it.title || it.name || "Product",
-      qty: Number(it.quantity ?? it.qty ?? 1),
-      price: toNumber(it.price) ?? 0,
-      productImage: it.image ?? it.img ?? null,
-    }));
-
-    return {
-      items: itemsPayload,
-      address: {
-        name: address.name,
-        street: address.street,
-        city: address.city,
-        state: address.state,
-        zipcode: address.zipcode,
-        phone: address.phone,
-        country: address.country,
-      },
-      total: total,
-      promoCode: promo ? { code: promo.code ?? promo.name ?? promo.codeValue } : null,
-    };
-  };
-
-  const handlePlaceOrder = async () => {
-    const err = validateAddress();
-    if (err) {
-      alert(err);
-      return;
-    }
-
-    if (items.length === 0) {
-      alert("Cart is empty. Add items to cart before placing an order.");
-      return;
-    }
-
-    
-    if (saveAddress) {
-      try {
-        localStorage.setItem("userAddress", JSON.stringify(address));
-      } catch {
-        
-      }
-    } else {
-      localStorage.removeItem("userAddress");
-    }
-
-    const payload = buildOrderPayload();
-
-    setPlacing(true);
-    try {
-      
-      const res = await axios.post("http://localhost:8080/api/orders", payload, {
-        headers: { "Content-Type": "application/json" },
-        timeout: 10000,
-      });
-
-      
-      const created = res?.data ?? null;
-
-      if (created) {
-        setOrderResponse(created);
-
-        
-        try {
-          dispatch(addOrderAction(created));
-        } catch (e) {
-          
-        }
-        dispatch(clearCart());
-        
-        window.dispatchEvent(new Event("cartUpdated"));
-        setPlacing(false);
-        return;
-      }
-
-      
-      const fallback = {
-        id: Date.now(),
-        items: payload.items,
-        total: payload.total,
-        address: payload.address,
-        promoCode: payload.promoCode,
-        status: "PENDING",
-        placedAt: new Date().toISOString(),
-      };
-      setOrderResponse(fallback);
-      dispatch(addOrderAction(fallback));
-      dispatch(clearCart());
-      window.dispatchEvent(new Event("cartUpdated"));
-    } catch (error) {
-      console.error("Order placement error:", error);
-      
-      const fallback = {
-        id: Date.now(),
-        items: payload.items,
-        total: payload.total,
-        address: payload.address,
-        promoCode: payload.promoCode,
-        status: "PENDING",
-        placedAt: new Date().toISOString(),
-      };
-      
-      alert("Backend not available — order saved locally for demo.");
-      setOrderResponse(fallback);
-      dispatch(addOrderAction(fallback));
-      dispatch(clearCart());
-      window.dispatchEvent(new Event("cartUpdated"));
-    } finally {
-      setPlacing(false);
-    }
-  };
-
-  
-  if (orderResponse) {
-    const ord = orderResponse;
-    return (
-      <div style={{ padding: 20 }}>
-        <h2>Order Confirmed</h2>
-        <p>
-          <b>Order ID:</b> {ord.id ?? "N/A"}
-        </p>
-        <p>
-          <b>Status:</b> {ord.status ?? ord.state ?? "PENDING"}
-        </p>
-        <p>
-          <b>Total:</b> ₹{toNumber(ord.total ?? total).toFixed(2)}
-        </p>
-        <p>
-          <b>Promo:</b> {ord.promoCode?.code ?? ord.promo?.code ?? "None"}
-        </p>
-        <p>
-          <b>Placed At:</b>{" "}
-          {ord.placedAt ? new Date(ord.placedAt).toLocaleString() : new Date().toLocaleString()}
-        </p>
-
-        <h3>Items</h3>
-        <ul>
-          {(ord.items ?? []).map((it, idx) => (
-            <li key={idx} style={{ marginBottom: 8 }}>
-              <img
-                src={it.productImage ?? "/placeholder.png"}
-                alt={it.productName}
-                style={{ width: 60, height: 60, objectFit: "contain", marginRight: 8 }}
-              />
-              {it.productName} — x{it.qty} — ₹{toNumber(it.price).toFixed(2)}
-            </li>
-          ))}
-        </ul>
-
-        <h3>Delivery Address</h3>
-        <div style={{ whiteSpace: "pre-line" }}>
-          {ord.address?.name}
-          {"\n"}
-          {ord.address?.street}
-          {"\n"}
-          {ord.address?.city}, {ord.address?.state} - {ord.address?.zipcode}
-          {"\n"}
-          {ord.address?.country}
-        </div>
-
-        <div style={{ marginTop: 16 }}>
-          <button onClick={() => navigate("/orders")}>Go to My Orders</button>
-        </div>
-      </div>
-    );
+const handlePlaceOrder = async () => {
+  if (
+    !address.name ||
+    !address.street ||
+    !address.city ||
+    !address.state ||
+    !address.zip ||
+    !address.country
+  ) {
+    setError("Please fill out all address fields.");
+    return;
   }
 
+  if (cartItems.length === 0) {
+    setError("Your cart is empty.");
+    return;
+  }
+
+  const orderPayload = {
+    orderitems: cartItems.map((item) => ({
+      product: { id: item.id },
+      quantity: item.quantity,
+      price: parseFloat(item.price),
+      productTitle: item.title,
+    })),
+    address,
+    total: parseFloat(subtotal.toFixed(2)),
+    qty: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+    status: "PENDING",
+  };
+
+  try {
+    const res = await fetch("http://localhost:8080/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(orderPayload),
+    });
+
+    if (res.ok) {
+      const savedOrder = await res.json();
+
+
+      const existingOrders = JSON.parse(localStorage.getItem("orders")) || [];
+      existingOrders.push(savedOrder);
+      localStorage.setItem("orders", JSON.stringify(existingOrders));
+
+      dispatch(clearCart());
+      setPlaced(true);
+
+      setTimeout(() => {
+        navigate("/orders");
+      }, 2000);
+    } else {
+      setError("Failed to place order. Please try again.");
+    }
+  } catch (err) {
+    console.error("Error placing order:", err);
+    setError("Backend error. Could not place order.");
+  }
+};
+
  
+
+  const styles = `
+    :root {
+      --primary: #3C1874;
+      --primary-dark: #2E125A;
+      --light-bg: #f7f4fc;
+      --text-dark: #1C1C1C;
+    }
+
+    .checkout-container {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 20px;
+      font-family: 'Poppins', sans-serif;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+    }
+
+    .checkout-title {
+      text-align: center;
+      color: var(--primary-dark);
+      font-size: 2rem;
+      font-weight: 700;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .form-section, .summary-section {
+      flex: 1;
+      min-width: 340px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      padding: 24px;
+    }
+
+    .form-section h3, .summary-section h3 {
+      color: var(--primary-dark);
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--primary);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 2px solid var(--primary);
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: var(--primary-dark);
+      box-shadow: 0 0 6px rgba(60,24,116,0.2);
+    }
+
+    .summary-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 6px;
+      color: var(--text-dark);
+      font-weight: 500;
+    }
+
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-top: 12px;
+    }
+
+    .place-order-btn {
+      width: 100%;
+      margin-top: 20px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .place-order-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .error-msg {
+      color: #e63946;
+      margin-top: 8px;
+      font-size: 0.9rem;
+    }
+
+    .success-msg {
+      text-align: center;
+      color: #2e8b57;
+      background: #e9f8ef;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .checkout-container {
+        flex-direction: column;
+      }
+    }
+  `;
+
   return (
-    <div style={{ padding: 20, maxWidth: 800 }}>
-      <h2>Checkout</h2>
+    <>
+      <style>{styles}</style>
+      <div className="checkout-container">
+        <h1 className="checkout-title">Checkout </h1>
 
-      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-        
-        <div style={{ flex: 1 }}>
-          <label>
-            Full name *
-            <input name="name" value={address.name} onChange={handleChange} style={{ display: "block", width: "100%", marginBottom: 8 }} />
-          </label>
+        <div className="form-section">
+          <h3>Delivery Address</h3>
+          {["name", "street", "city", "state", "zip", "country"].map((field) => (
+            <div key={field} className="form-group">
+              <label>{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+              <input
+                name={field}
+                value={address[field]}
+                onChange={handleChange}
+                placeholder={`Enter your ${field}`}
+              />
+            </div>
+          ))}
 
-          <label>
-            Street / Address line *
-            <input name="street" value={address.street} onChange={handleChange} style={{ display: "block", width: "100%", marginBottom: 8 }} />
-          </label>
+          {error && <p className="error-msg">{error}</p>}
+          {placed && <p className="success-msg">Order placed successfully!</p>}
 
-          <label>
-            City *
-            <input name="city" value={address.city} onChange={handleChange} style={{ display: "block", width: "100%", marginBottom: 8 }} />
-          </label>
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <label style={{ flex: 1 }}>
-              State
-              <input name="state" value={address.state} onChange={handleChange} style={{ display: "block", width: "100%", marginBottom: 8 }} />
-            </label>
-            <label style={{ width: 150 }}>
-              Zipcode *
-              <input name="zipcode" value={address.zipcode} onChange={handleChange} style={{ display: "block", width: "100%", marginBottom: 8 }} />
-            </label>
-          </div>
-
-          <label>
-            Phone
-            <input name="phone" value={address.phone} onChange={handleChange} style={{ display: "block", width: "100%", marginBottom: 8 }} />
-          </label>
-
-          <label>
-            Country
-            <input name="country" value={address.country} onChange={handleChange} style={{ display: "block", width: "100%", marginBottom: 8 }} />
-          </label>
-
-          <div style={{ marginTop: 8 }}>
-            <label>
-              <input type="checkbox" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} />
-              {"  "}
-              Save this address for next time
-            </label>
-          </div>
+          <button className="place-order-btn" onClick={handlePlaceOrder}>
+            Place Order
+          </button>
         </div>
 
-        
-        <div style={{ width: 320, border: "1px solid #ddd", padding: 12, borderRadius: 8 }}>
+
+        <div className="summary-section">
           <h3>Order Summary</h3>
-          <p>Subtotal: <b>₹{subtotal.toFixed(2)}</b></p>
-          <p>Discount: <b>₹{discount.toFixed(2)}</b></p>
-          <p style={{ fontSize: 18 }}><b>Total: ₹{total.toFixed(2)}</b></p>
-
-          <div style={{ marginTop: 12 }}>
-            <button
-              onClick={handlePlaceOrder}
-              disabled={placing}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                background: "#28a745",
-                color: "#fff",
-                border: "none",
-                cursor: "pointer",
-                borderRadius: 6,
-              }}
-            >
-              {placing ? "Placing order..." : "Place Order"}
-            </button>
-          </div>
-
-          <div style={{ marginTop: 10, fontSize: 13, color: "#666" }}>
-            <div>Promo: {promo ? (promo.code ?? promo.name ?? promo.value) : "None"}</div>
-            <div style={{ marginTop: 6 }}>
-              You will receive an email confirmation when the order is processed.
-            </div>
-          </div>
+          {cartItems.length === 0 ? (
+            <p>No items in your cart.</p>
+          ) : (
+            <>
+              <div className="summary-list">
+                {cartItems.map((item) => (
+                  <div key={item.id} className="summary-item">
+                    <span>
+                      {item.title} × {item.quantity}
+                    </span>
+                    <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="summary-total">
+                <span>Total</span>
+                <span>₹{subtotal.toFixed(2)}</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
-}
+};
+
+export default CheckoutPage;

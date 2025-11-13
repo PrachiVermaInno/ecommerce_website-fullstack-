@@ -1,69 +1,69 @@
 package com.example.ecommercewebsite.services;
 
 import com.example.ecommercewebsite.models.Order;
-import com.example.ecommercewebsite.models.OrderItem;
 import com.example.ecommercewebsite.Repositories.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * OrderService handles creating and managing orders.
- * This version does NOT use advanced TaskScheduler —
- * it uses a simple background thread to auto-update order status.
- */
 @Service
 public class OrderServices {
 
     @Autowired
     private OrderRepository repo;
 
-
-    @Value("${ecommerce.order.delivery-delay-ms:21600000}")
-    private long deliveryDelayMs;
-
-
     @Transactional
     public Order createOrder(Order order) {
-        order.setStatus(order.getStatus() == null ? "PENDING" : order.getStatus());
+
+        order.setStatus(order.getStatus() == null ? Order.Status.PENDING : order.getStatus());
         order.setPlacedAt(LocalDateTime.now());
         return repo.save(order);
     }
-
-
 
     public List<Order> getAllOrders() {
         return repo.findAll();
     }
 
-
     public Order getById(Long id) {
         return repo.findById(id).orElse(null);
     }
 
+    @Scheduled(fixedRate = 60 * 60 * 1000) // runs every hour
+    public void autoDeliverOrders() {
+        List<Order> pendingOrders = repo.findAll().stream()
+                .filter(o -> o.getStatus() == Order.Status.PENDING)
+                .toList();
 
-    private void autoDeliverAfterDelay(Long orderId) {
-        try {
-
-            Thread.sleep(deliveryDelayMs);
-
-
-            Order order = repo.findById(orderId).orElse(null);
-            if (order != null && !"Delivered".equalsIgnoreCase(order.getStatus())) {
-                order.setStatus("Delivered");
-                order.setDeliveredAt(LocalDateTime.now());
+        for (Order order : pendingOrders) {
+            LocalDateTime placedAt = order.getPlacedAt();
+            if (placedAt != null && placedAt.plusHours(6).isBefore(LocalDateTime.now())) {
+                order.markAsDelivered();
                 repo.save(order);
-                System.out.println("✅ Order " + orderId + " marked as Delivered automatically!");
+                System.out.println("Order ID " + order.getId() + " marked as delivered automatically.");
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); // restore thread interrupt flag
-            System.err.println("Auto-delivery thread interrupted for order " + orderId);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
+
+    @Transactional
+    public String cancelOrder(Long id) {
+        Order order = repo.findById(id).orElse(null);
+        if (order == null) {
+            return "Order not found";
+        }
+        if (order.getStatus() == Order.Status.DELIVERED) {
+            return "Delivered orders cannot be cancelled";
+        }
+        if (order.getStatus() == Order.Status.CANCELLED) {
+            return "Order already cancelled";
+        }
+
+        order.cancelOrder();
+        repo.save(order);
+        return "Order cancelled successfully";
+    }
+
 }

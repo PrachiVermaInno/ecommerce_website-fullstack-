@@ -15,7 +15,9 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "TEXT")
     private String title;
+    @Column(columnDefinition = "TEXT")
     private String description;
     private String category;
     private Double price;
